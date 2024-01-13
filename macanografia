@@ -1,0 +1,115 @@
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+import javax.swing.*;
+import org.jsoup.*;
+import org.jsoup.nodes.*;
+
+public class TecladoVirtual {
+
+    private JFrame frame;
+    private JPanel panel;
+    private List<JButton> botones;
+    private List<String> pangramas;
+    private int contadorTeclasCorrectas;
+    private int contadorTeclasIncorrectas;
+    private Set<Character> teclasDificiles;
+
+    public TecladoVirtual() {
+        // Creamos la GUI
+        frame = new JFrame("Teclado virtual");
+        frame.setSize(500, 500);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        // Creamos el teclado virtual
+        panel = new JPanel();
+        panel.setLayout(new GridLayout(4, 10));
+
+        botones = new ArrayList<>();
+        for (char c = 'A'; c <= 'Z'; c++) {
+            JButton button = new JButton(String.valueOf(c));
+            button.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    onBotonPresionado((JButton) e.getSource());
+                }
+            });
+            botones.add(button);
+            panel.add(button);
+        }
+
+        for (char c = '0'; c <= '9'; c++) {
+            JButton button = new JButton(String.valueOf(c));
+            button.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    onBotonPresionado((JButton) e.getSource());
+                }
+            });
+            botones.add(button);
+            panel.add(button);
+        }
+
+        JButton buttonEnter = new JButton("Enter");
+        buttonEnter.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                onBotonPresionado((JButton) e.getSource());
+            }
+        });
+        botones.add(buttonEnter);
+
+        panel.add(buttonEnter);
+        frame.add(panel);
+        frame.setVisible(true);
+
+        // Buscamos los pangramas
+        pangramas = buscarPangramas();
+
+        // Inicializamos los contadores
+        contadorTeclasCorrectas = 0;
+        contadorTeclasIncorrectas = 0;
+        teclasDificiles = new HashSet<>();
+    }
+
+    private void onBotonPresionado(JButton boton) {
+        // Obtenemos la letra o símbolo que representa el botón
+        char letra = getLetra(boton);
+
+        // Verificamos si la letra está en el pangrama actual
+        boolean correcta = estaEnPangrama(letra, getPangramaActual());
+
+        // Actualizamos el recuento de pulsaciones de teclas correctas e incorrectas
+        actualizarConteo(letra, correcta);
+
+        // Si la letra está en el pangrama actual, la resaltamos
+        if (correcta) {
+            boton.setBackground(Color.GREEN);
+        } else {
+            boton.setBackground(Color.RED);
+        }
+    }
+
+    private List<String> buscarPangramas() {
+        // Creamos la URL del sitio web que contiene los pangramas
+        String url = "https://es.wikipedia.org/wiki/Pangrama";
+
+        // Usamos la biblioteca Jsoup para descargar el contenido del sitio web
+        Document document = Jsoup.connect(url).get();
+
+        // Obtenemos la lista de pangramas del sitio web
+        Elements pangramas = document.select(".mw-parser-output > li");
+
+        // Creamos una lista para almacenar los pangramas
+        List<String> pangramasList = new ArrayList<>();
+
+        // Recorremos la lista de pangramas
+        for (Element pangrama : pangramas) {
+            // Obtenemos el pangrama
+            String pangramaTexto = pangrama.text();
+
+            // Agregamos el pangrama a la lista
+            pangramasList.add(pangramaTexto);
+        }
+
+        // Devolvemos la lista de pangramas
